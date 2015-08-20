@@ -22,11 +22,47 @@ class MasterViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        var appDel: AppDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+        var context: NSManagedObjectContext = appDel.managedObjectContext!
+        
         let url = NSURL(string: "https://www.googleapis.com/blogger/v3/blogs/10861780/posts?key=AIzaSyCWHQIxPFhF5hG-UIppwBB1zl2BBeRO4zg")
         let session = NSURLSession.sharedSession()
-//        let task = session.dataTaskWithURL(url, completionHandler: { (data, response, error) -> Void in
-//            
-//        })
+        let task = session.dataTaskWithURL(url!, completionHandler: { (data, response, error) -> Void in
+            if error != nil {
+                println(error)
+            } else {
+                // println(NSString(data: data, encoding: NSUTF8StringEncoding))
+                let jsonResult = NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions.MutableContainers, error: nil) as! NSDictionary
+                
+                if jsonResult.count > 0 {
+                    if let items = jsonResult["items"] as? NSArray {
+                        for item in items {
+                            
+                            
+                            if let title = item["title"] as? NSString, let content = item["content"] as? NSString {
+                                var newPost: NSManagedObject = NSEntityDescription.insertNewObjectForEntityForName("Posts", inManagedObjectContext: context) as! NSManagedObject
+                                
+                                newPost.setValue(title, forKey: "title")
+                                newPost.setValue(content, forKey: "content")
+                                
+                                context.save(nil)
+                            }
+                            
+                        }
+                    }
+                }
+                
+                var request = NSFetchRequest(entityName: "Posts")
+                request.returnsObjectsAsFaults = false
+                var results = context.executeFetchRequest(request, error: nil)!
+                
+                println(results)
+                
+                self.tableView.reloadData()
+            }
+        })
+        
+        task.resume()
     }
 
     override func didReceiveMemoryWarning() {
