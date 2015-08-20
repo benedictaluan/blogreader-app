@@ -36,9 +36,20 @@ class MasterViewController: UITableViewController {
                 
                 if jsonResult.count > 0 {
                     if let items = jsonResult["items"] as? NSArray {
+
+                        // Delete all posts first
+                        var request = NSFetchRequest(entityName: "Posts")
+                        request.returnsObjectsAsFaults = false
+                        var results = context.executeFetchRequest(request, error: nil)!
+                        
+                        if results.count > 0 {
+                            for result in results {
+                                context.deleteObject(result as! NSManagedObject)
+                                context.save(nil)
+                            }
+                        }
+                        
                         for item in items {
-                            
-                            
                             if let title = item["title"] as? NSString, let content = item["content"] as? NSString {
                                 var newPost: NSManagedObject = NSEntityDescription.insertNewObjectForEntityForName("Posts", inManagedObjectContext: context) as! NSManagedObject
                                 
